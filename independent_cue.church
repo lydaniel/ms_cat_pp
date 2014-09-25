@@ -1,0 +1,65 @@
+;-- load libraries
+(load "lib.church")
+
+;-- inputs
+(define input_list (regexp-split argstring "|"))
+(define i_cat_a    (map (lambda (x) (map (lambda (y) (string_to_number y)) 
+                                         (regexp-split x ",")))
+                        (regexp-split (first input_list) ";")))
+(define i_cat_b    (map (lambda (x) (map (lambda (y) (string_to_number y)) 
+                                         (regexp-split x ",")))
+                        (regexp-split (second input_list) ";")))
+(define i_t_stim   (map (lambda (x) (map (lambda (y) (string_to_number y)) 
+                                         (regexp-split x ",")))
+                        (regexp-split (third input_list) ";")))
+
+;-- core
+(define proto_a '(1 1 1 1))
+(define proto_b '(0 0 0 0))
+
+(define categorization
+    (mem (lambda (stimulus w a)
+        (define (evi_s s p w) (apply + (map (lambda (x y z) 
+                                                    (if (eq? x y) z (* -1 z))) 
+                                            s p w)))
+
+        (define p_evi_a (evi_s stimulus proto_a w))
+
+        (list (list 0 1)
+              (list (/ 1 (+ 1 (exp (* -1 (* a p_evi_a)))))
+                    (/ 1 (+ 1 (exp (* a p_evi_a)))))))))
+
+;(define (learn cat_a cat_b)
+;    (mh-query samples mh_lag
+;        (define test_w (repeat 4 (lambda () (uniform 0 1))))
+;        (define test_a (uniform 0 5))
+;
+;        (define test_cat_p_a (map (lambda (x) (categorization x test_w test_a)) cat_a))
+;        (define test_cat_p_b (map (lambda (x) (categorization x test_w test_a)) cat_b))
+;
+;        (define cat_a_factor (sum (map (lambda (x) (log (first (second x)))) test_cat_p_a))) 
+;        (define cat_b_factor (sum (map (lambda (x) (log (second (second x)))) test_cat_p_b)))
+;
+;        (list test_w test_a)
+;
+;        (factor (+ cat_a_factor cat_b_factor))))
+
+;(define sample_params (learn i_cat_a i_cat_b))
+
+(define sample_params (repeat samples (lambda () (list 
+                                                     (repeat 4 (lambda() (uniform 0 1)))
+                                                     (uniform 0 5)))))
+
+(define (stim_dist w)
+    (map (lambda (x) (first (second (categorization x (first w) (second w)))))
+        (append i_cat_a i_cat_b i_t_stim)))
+
+(define cat_dist (map stim_dist sample_params))
+
+(define mean_cat_dist (v_div (fold v_add 
+                             (first cat_dist) (rest cat_dist)) 
+                      (length cat_dist)))
+
+mean_cat_dist
+
+
