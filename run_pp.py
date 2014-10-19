@@ -21,28 +21,44 @@ import math
 ####
 
 def check_cats(cat_a, cat_b) :
-    check_cats_array = [0]*(len(cat_a[0]))
+    #print cat_a, cat_b
     for ca in range(len(cat_a[0])) :
-        a_count = 0
-        b_count = 0
+        a_mode = 0
+        b_mode = 0
+        right_count = 0
+        wrong_count = 0
+
         for i in range(len(cat_a)) :
             if (cat_a[i][ca] == '1') :
-                a_count += 1
+                a_mode += 1
+                right_count += 1
             else :
-                b_count += 1
+                a_mode -= 1
+                wrong_count += 1
+
+        if (a_mode < 0) :
+            #print "    a mode failed:", a_mode, ca
+            return False
 
         for i in range(len(cat_b)) :
             if (cat_b[i][ca] == '0') :
-                a_count += 1
+                b_mode += 1
+                right_count += 1
             else :
-                b_count += 1
+                b_mode -= 1
+                wrong_count += 1
 
-        if (a_count <= b_count) :
-            return (False, 0)
-        else :
-            check_cats_array[ca] = a_count - b_count
+        if (b_mode < 0) :
+            #print "    b mode failed:", b_mode, ca
+            return False
 
-    return (True, check_cats_array)
+        if ((a_mode == 0) or (b_mode == 0)) :
+            #print "    count:", right_count, wrong_count, ca
+            if (right_count < wrong_count) :
+                #print "    count failed:", right_count - wrong_count, ca
+                return False
+
+    return True
 
 def list_share_count(ac, bc, at, bt) :
     diff = 0
@@ -79,13 +95,66 @@ def does_intersect(a1, a2, b1, b2) :
     else :
         return False
 
+def make_key(a_cat, b_cat) :
+    string = ""
+    for acs in a_cat :
+        string += acs + ","
+    string = string[:-1]
+    string += ";"
+
+    for bcs in b_cat :
+        string += bcs + ","
+    string = string[:-1]
+
+    return string
+
+def add_to_hash(perm_hash, a_cat, b_cat) :
+    a_swap_list = list(itertools.permutations(range(len(a_cat)), len(a_cat)))
+    b_swap_list = list(itertools.permutations(range(len(b_cat)), len(b_cat)))
+    row_swap_list = list(itertools.product(a_swap_list, b_swap_list))
+
+    col_swap_list = list(itertools.permutations(range(len(a_cat[0])), len(a_cat[0])))
+
+    for (asl, bsl) in row_swap_list :
+        tt_a_cat = copy.deepcopy(a_cat)
+        tt_b_cat = copy.deepcopy(b_cat)
+
+        for i in range(len(asl)) :
+            tt_a_cat[i] = a_cat[asl[i]]
+        for i in range(len(bsl)) :
+            tt_b_cat[i] = b_cat[bsl[i]]
+
+        for csl in col_swap_list :
+            t_a_cat = copy.deepcopy(tt_a_cat)
+            t_b_cat = copy.deepcopy(tt_b_cat)
+            for i in range(len(t_a_cat)) :
+                t_a_cat_i = [int(j) for j in t_a_cat[i]]
+                tt_a_cat_i = [int(j) for j in tt_a_cat[i]]
+                for j in range(len(csl)) :
+                    t_a_cat_i[j] = tt_a_cat_i[csl[j]]
+                t_a_cat[i] = ''.join(str(j) for j in t_a_cat_i)
+
+            for i in range(len(t_b_cat)) :
+                t_b_cat_i = [int(j) for j in t_b_cat[i]]
+                tt_b_cat_i = [int(j) for j in tt_b_cat[i]]
+                for j in range(len(csl)) :
+                    t_b_cat_i[j] = tt_b_cat_i[csl[j]]
+                t_b_cat[i] = ''.join(str(j) for j in t_b_cat_i)
+            
+            t_a_cat.sort()
+            t_b_cat.sort()
+
+            perm_hash[make_key(t_a_cat, t_b_cat)] = True
+
+    return True
+
 ####
 
-def pp_execute_church(models, cat_size, inputs, query, church_exec_path, check_cats_array, il, run) :
+def pp_execute_church(models, cat_size, inputs, query, church_exec_path, il, run) :
     t_outputs = [pmf.PMF() for i in range(len(models))]
     output_string = "" 
     output_string += "inputs = " + str(inputs) + "\n"
-    output_string += "check = " + str(check_cats_array) + "\n"
+    #output_string += "check = " + str(check_cats_array) + "\n"
 
     for m in range(len(models)) :
         church.exec_model(models[m].x, inputs, t_outputs[m], query, \
@@ -184,6 +253,7 @@ def pp_execute_church(models, cat_size, inputs, query, church_exec_path, check_c
     return(temp_result_recall, temp_result_transfer, temp_result_total, output_string)
 
 ####
+
 in_sequence_raw = ["".join(seq) for seq in itertools.product("01", repeat=4)]
 in_sequence = [0]*len(in_sequence_raw)
 for i in range(len(in_sequence_raw)) :
@@ -191,105 +261,119 @@ for i in range(len(in_sequence_raw)) :
 
 num_sequence = range(len(in_sequence))
 
-#inputs_list = []
-#cat_size_list = []
-#check_cats_list = []
-##for a in range(3,6):
-##    for b in range(3,6):
-#a_size = 5
-#b_size = 4
-#t_size = len(num_sequence) - a_size - b_size
-#a_comb = itertools.combinations(num_sequence, a_size)
-#for ac in a_comb :
-#    num_sequence_b = copy.deepcopy(num_sequence)
-#    for aac in ac :
-#        num_sequence_b.remove(aac)
-#
-#    b_comb = itertools.combinations(num_sequence_b, b_size)
-#
-#    for bc in b_comb :
-#        a_cat_raw = []
-#        a_cat = []
-#        for aac in ac :
-#            a_cat_raw.append(in_sequence_raw[aac])
-#            a_cat.append(in_sequence[aac])
-#        b_cat_raw = []
-#        b_cat = []
-#        for bbc in bc :
-#            b_cat_raw.append(in_sequence_raw[bbc])
-#            b_cat.append(in_sequence[bbc])
-#            
-#        (check_cats_valid, check_cats_array) = check_cats(a_cat_raw, b_cat_raw)
-#        if (check_cats_valid) :
-#            #print a_cat_raw, b_cat_raw
-#            valid = True
-#            for (a1, a2) in itertools.combinations(a_cat_raw, 2):
-#                ma = mask(a1, a2)
-#                #print "a:", a1, a2, ma
-#                if (sum(ma) != 1) :
-#                    for (b1, b2) in itertools.combinations(b_cat_raw, 2) :
-#                        #print "    b:", b1, b2
-#                        if does_intersect(a1, a2, b1, b2) :
-#                            valid = False
-#                            break
-#
-#                #print "    ", valid
-#                if (valid == False) :
-#                    break
-#                #print ""
-#
-#            if (valid) :
-#                tc = copy.deepcopy(num_sequence)
-#                for aac in ac :
-#                    tc.remove(aac)
-#                for bbc in bc :
-#                    tc.remove(bbc)
-#                #print ac, bc, tc
-#
-#                t_cat_raw = []
-#                t_cat = []
-#                for ttc in tc :
-#                    t_cat_raw.append(in_sequence_raw[ttc])
-#                    t_cat.append(in_sequence[ttc])
-#
-#                a_string = ""
-#                for acs in a_cat :
-#                    a_string += acs + ";"
-#                a_string = a_string[:-1]
-#
-#                b_string = ""
-#                for bcs in b_cat :
-#                    b_string += bcs + ";"
-#                b_string = b_string[:-1]
-#
-#                t_string = ""
-#                for tcs in t_cat :
-#                    t_string += tcs + ";"
-#                t_string = t_string[:-1]
-#
-#
-#                inputs_list.append(a_string + "|" + b_string + "|" + t_string)
-#                cat_size_list.append([a_size, b_size, t_size])
-#                check_cats_list.append(check_cats_array)
+#inputs_list_raw = []
+inputs_perm_hash = {}
+inputs_list = []
+cat_size_list = []
+#for a in range(3,6):
+#    for b in range(3,6):
+a_size = 5
+b_size = 4
+t_size = len(num_sequence) - a_size - b_size
+a_comb = itertools.combinations(num_sequence, a_size)
+for ac in a_comb :
+    num_sequence_b = copy.deepcopy(num_sequence)
+    for aac in ac :
+        num_sequence_b.remove(aac)
+
+    b_comb = itertools.combinations(num_sequence_b, b_size)
+
+    for bc in b_comb :
+        a_cat_raw = []
+        a_cat = []
+        for aac in ac :
+            a_cat_raw.append(in_sequence_raw[aac])
+            a_cat.append(in_sequence[aac])
+        b_cat_raw = []
+        b_cat = []
+        for bbc in bc :
+            b_cat_raw.append(in_sequence_raw[bbc])
+            b_cat.append(in_sequence[bbc])
+            
+        check_cats_valid = check_cats(a_cat_raw, b_cat_raw)
+        if (check_cats_valid) :
+            #print a_cat_raw, b_cat_raw
+            valid_linsep = True
+            for (a1, a2) in itertools.combinations(a_cat_raw, 2):
+                ma = mask(a1, a2)
+                #print "a:", a1, a2, ma
+                if (sum(ma) != 1) :
+                    for (b1, b2) in itertools.combinations(b_cat_raw, 2) :
+                        #print "    b:", b1, b2
+                        if does_intersect(a1, a2, b1, b2) :
+                            valid_linsep = False
+                            break
+
+                #print "    ", valid_linsep
+                if (valid_linsep == False) :
+                    break
+                #print ""
+
+            if (valid_linsep) :
+                #print make_key(a_cat_raw, b_cat_raw)
+                #print inputs_perm_hash
+
+                if (make_key(a_cat_raw, b_cat_raw) not in inputs_perm_hash):
+                    tc = copy.deepcopy(num_sequence)
+                    for aac in ac :
+                        tc.remove(aac)
+                    for bbc in bc :
+                        tc.remove(bbc)
+                    #print ac, bc, tc
+
+                    t_cat_raw = []
+                    t_cat = []
+                    for ttc in tc :
+                        t_cat_raw.append(in_sequence_raw[ttc])
+                        t_cat.append(in_sequence[ttc])
+
+                    a_string = ""
+                    for acs in a_cat :
+                        a_string += acs + ";"
+                    a_string = a_string[:-1]
+
+                    b_string = ""
+                    for bcs in b_cat :
+                        b_string += bcs + ";"
+                    b_string = b_string[:-1]
+
+                    t_string = ""
+                    for tcs in t_cat :
+                        t_string += tcs + ";"
+                    t_string = t_string[:-1]
+
+                    #inputs_list_raw.append([a_cat_raw, b_cat_raw])
+                    #print "committing: ", [a_cat_raw, b_cat_raw]
+
+                    add_to_hash(inputs_perm_hash, a_cat_raw, b_cat_raw)
+
+                    #print inputs_perm_hash
+                    #print len(inputs_perm_hash)
+
+                    inputs_list.append(a_string + "|" + b_string + "|" + t_string)
+                    cat_size_list.append([a_size, b_size, t_size])
+                    #sys.exit(0)
+                #else :
+                #    print "hit :", make_key(a_cat_raw, b_cat_raw)
+                    
+##                check_cats_list.append(check_cats_array)
 
 #a_target = ['0,1,1,1','1,0,1,0','1,0,1,1','1,1,0,1','1,1,1,0']
 #b_target = ['0,0,0,0','0,0,0,1','0,1,1,0','1,1,0,0']
 
-inputs_list = [ \
-    '0,0,0,1;0,0,1,1;1,1,0,0;1,1,1,0;1,1,1,1|0,1,0,0;0,1,1,0;1,0,0,0;1,0,1,0|0,0,0,0;0,0,1,0;0,1,0,1;0,1,1,1;1,0,0,1;1,0,1,1;1,1,0,1', \
-    '0,0,1,1;0,1,0,0;1,0,1,1;1,1,0,0;1,1,1,0|0,0,0,0;0,0,1,0;1,0,0,0;1,0,1,0|0,0,0,1;0,1,0,1;0,1,1,0;0,1,1,1;1,0,0,1;1,1,0,1;1,1,1,1', \
-    '0,0,1,1;0,1,0,0;0,1,0,1;1,0,1,0;1,1,0,0|0,0,0,0;0,0,0,1;0,0,1,0;1,0,0,0|0,1,1,0;0,1,1,1;1,0,0,1;1,0,1,1;1,1,0,1;1,1,1,0;1,1,1,1', \
-    '0,1,1,1;1,0,1,0;1,0,1,1;1,1,0,1;1,1,1,0|0,0,0,0;0,0,0,1;0,1,1,0;1,1,0,0|0,0,1,0;0,0,1,1;0,1,0,0;0,1,0,1;1,0,0,0;1,0,0,1;1,1,1,1'] # MS
+#inputs_list = [ \
+#    '0,0,0,1;0,0,1,1;1,1,0,0;1,1,1,0;1,1,1,1|0,1,0,0;0,1,1,0;1,0,0,0;1,0,1,0|0,0,0,0;0,0,1,0;0,1,0,1;0,1,1,1;1,0,0,1;1,0,1,1;1,1,0,1', \
+#    '0,0,1,1;0,1,0,0;1,0,1,1;1,1,0,0;1,1,1,0|0,0,0,0;0,0,1,0;1,0,0,0;1,0,1,0|0,0,0,1;0,1,0,1;0,1,1,0;0,1,1,1;1,0,0,1;1,1,0,1;1,1,1,1', \
+#    '0,0,1,1;0,1,0,0;0,1,0,1;1,0,1,0;1,1,0,0|0,0,0,0;0,0,0,1;0,0,1,0;1,0,0,0|0,1,1,0;0,1,1,1;1,0,0,1;1,0,1,1;1,1,0,1;1,1,1,0;1,1,1,1', \
+#    '0,1,1,1;1,0,1,0;1,0,1,1;1,1,0,1;1,1,1,0|0,0,0,0;0,0,0,1;0,1,1,0;1,1,0,0|0,0,1,0;0,0,1,1;0,1,0,0;0,1,0,1;1,0,0,0;1,0,0,1;1,1,1,1'] # MS
+#
+#cat_size_list = [[5, 4, 7], \
+#                 [5, 4, 7], \
+#                 [5, 4, 7], \
+#                 [5, 4, 7]]
 
-cat_size_list = [[5, 4, 7], \
-                 [5, 4, 7], \
-                 [5, 4, 7], \
-                 [5, 4, 7]]
-
-check_cats_list = [[5,5,5,5], \
-                   [5,5,5,5], \
-                   [5,5,5,5], \
-                   [5,5,5,5]]
+inputs_list.append('1,1,1,0;1,0,1,0;1,0,1,1;1,1,0,1;0,1,1,1|1,1,0,0;0,1,1,0;0,0,0,1;0,0,0,0|0,0,1,0;0,0,1,1;0,1,0,0;0,1,0,1;1,0,0,0;1,0,0,1;1,1,1,1')
+cat_size_list.append([5, 4, 7])
 
 inputs_list_f = inputs_list
 cat_size_list_f = cat_size_list
@@ -297,6 +381,8 @@ cat_size_list_f = cat_size_list
 ############################################
 
 t_init = datetime.datetime.now()
+print "time start: ", str(t_init)
+sys.stdout.flush()
 
 samples = 5000
 
@@ -353,7 +439,7 @@ for il in range(input_len) :
 for il in range(input_len) :
     for r in range(run_len) :
         job_results[il][r] = job_server.submit(pp_execute_church, \
-                                               (models, cat_size_list_f[il], inputs_list_f[il], query, church_exec_path, check_cats_list[il], il, r), \
+                                               (models, cat_size_list_f[il], inputs_list_f[il], query, church_exec_path, il, r), \
                                                (), ("oed", "pmf", "church", "copy", "itertools", "lib_result", "math"))
 
 for il in range(input_len) :
@@ -438,8 +524,8 @@ f_log_s_transfer.close()
 f_log_stats_transfer.close()
 f_log_stats_s_transfer.close()
 
-print "time start: ", str(t_init)
 print "time finish: ", str(t_finish)
 print "time elapsed: ", (t_finish - t_init).total_seconds()
+sys.stdout.flush()
 
 
