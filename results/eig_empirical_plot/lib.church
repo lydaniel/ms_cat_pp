@@ -1,0 +1,12 @@
+;-- library
+(define samples 5000)
+(define mh_lag 1)
+
+(define (list_sum lst) (make-list (length lst) (sum lst)))
+(define (normalize_list lst) (map (lambda (x y) (/ x y)) lst (list_sum lst)))
+
+(define (v_add x y) (map + x y))
+(define (v_sub x y) (map - x y))
+(define (v_mul x y) (map * x y))
+(define (v_div lst n) (map (lambda (x) (/ x n)) lst))
+

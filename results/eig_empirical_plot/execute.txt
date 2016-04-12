@@ -1,0 +1,10 @@
+<Stimuli dimension are separated via commas, stimuli are separated via semicolons, categories are separated via bars>
+<arglist: category A, category B, stimuli>
+church -a "1,1,1,0;1,0,1,0;1,0,1,1;1,1,0,1;0,1,1,1|1,1,0,0;0,1,1,0;0,0,0,1;0,0,0,0|0,0,1,0;0,0,1,1;0,1,0,0;0,1,0,1;1,0,0,0;1,0,0,1;1,1,1,1" independent_cue.church 
+church -a "1,1,1,0;1,0,1,0;1,0,1,1;1,1,0,1;0,1,1,1|1,1,0,0;0,1,1,0;0,0,0,1;0,0,0,0|0,0,1,0;0,0,1,1;0,1,0,0;0,1,0,1;1,0,0,0;1,0,0,1;1,1,1,1" context_theory.church 
+
+<arglist: category A, category B, stimuli, mixture ratio, number of samples>
+church -a "1,1,1,0;1,0,1,0;1,0,1,1;1,1,0,1;0,1,1,1|1,1,0,0;0,1,1,0;0,0,0,1;0,0,0,0|0,0,1,0;0,0,1,1;0,1,0,0;0,1,0,1;1,0,0,0;1,0,0,1;1,1,1,1|0.1|6" mixture_model.church 
+
+church -a "0,0,0,1;0,0,1,1;1,1,0,0;1,1,1,0;1,1,1,1|0,1,0,0;0,1,1,0;1,0,0,0;1,0,1,0|0,0,0,0;0,0,1,0;0,1,0,1;0,1,1,1;1,0,0,1;1,0,1,1;1,1,0,1" independent_cue_learn.church 
+church -a "0,0,0,1;0,0,1,1;1,1,0,0;1,1,1,0;1,1,1,1|0,1,0,0;0,1,1,0;1,0,0,0;1,0,1,0|0,0,0,0;0,0,1,0;0,1,0,1;0,1,1,1;1,0,0,1;1,0,1,1;1,1,0,1" context_theory_learn.church 

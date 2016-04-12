@@ -1,0 +1,11 @@
+;-- library
+(define mh_samples 1)
+(define mh_lag 20)
+
+(define (list_sum lst) (make-list (length lst) (sum lst)))
+(define (normalize_list lst) (map (lambda (x y) (/ x y)) lst (list_sum lst)))
+
+(define (collapse lst)
+    (if (= (length lst) 0)
+        '()
+        (append (first lst) (collapse (rest lst)))))
